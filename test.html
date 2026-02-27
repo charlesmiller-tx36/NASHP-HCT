@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html><head><title>Test</title></head>
+<body>
+<h1>Test Page</h1>
+<p id="status">Loading data...</p>
+<script src="nashp_data.js"></script>
+<script>
+document.getElementById('status').textContent = 'Data loaded! Records: ' + RAW.data.length;
+</script>
+</body></html>

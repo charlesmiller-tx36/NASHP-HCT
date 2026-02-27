@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html><head>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
+</head><body>
+<div style="width:800px;height:500px"><canvas id="cv"></canvas></div>
+<div id="out"></div>
+<script>
+const DK='#002D74';
+const MC=['#3A4A9F','#00A9C5','#2A7DE1','#F26852','#002D74'];
+const ML=['Cat A','Cat B','Cat C'];
+
+const catLabelPlugin={id:'catLabels',afterDraw:function(chart){
+    if(!chart.options.plugins.catLabels)return;
+    var cfg=chart.options.plugins.catLabels;
+    var labels=cfg.labels,cw=cfg.cw,gp=cfg.gp,stats=cfg.stats||[];
+    var ctx=chart.ctx,xScale=chart.scales.x,yScale=chart.scales.y;
+    var catColors=cfg.catColors||[];
+    var fmt=cfg.fmt||function(v){return v.toFixed(1);};
+    ctx.save();
+    document.getElementById('out').textContent='Plugin fired! stats.length='+stats.length;
+    stats.forEach(function(st,i){
+        if(!st)return;
+        var xCenter=i*(cw+gp)+cw/2;
+        var xLeft=xCenter-cw*0.42;
+        var xRight=xCenter+cw*0.42;
+        var pxL=xScale.getPixelForValue(xLeft);
+        var pxR=xScale.getPixelForValue(xRight);
+        var pxQ1=yScale.getPixelForValue(st.q1);
+        var pxQ3=yScale.getPixelForValue(st.q3);
+        var pxMed=yScale.getPixelForValue(st.med);
+        var cc=catColors[i]||'#888888';
+        ctx.fillStyle=cc+'22';
+        ctx.fillRect(pxL,Math.min(pxQ1,pxQ3),pxR-pxL,Math.abs(pxQ1-pxQ3));
+        ctx.strokeStyle=cc+'66';
+        ctx.lineWidth=1;
+        ctx.setLineDash([3,3]);
+        ctx.strokeRect(pxL,Math.min(pxQ1,pxQ3),pxR-pxL,Math.abs(pxQ1-pxQ3));
+        ctx.setLineDash([]);
+        ctx.strokeStyle=cc;
+        ctx.lineWidth=2.5;
+        ctx.beginPath();
+        ctx.moveTo(pxL,pxMed);
+        ctx.lineTo(pxR,pxMed);
+        ctx.stroke();
+        var tx=pxR+3;
+        ctx.font='600 9px sans-serif';
+        ctx.fillStyle=cc;
+        ctx.textAlign='left';
+        ctx.textBaseline='middle';
+        ctx.fillText('Med: '+fmt(st.med),tx,pxMed);
+        ctx.fillStyle=cc+'AA';
+        ctx.font='500 8px sans-serif';
+        ctx.textBaseline='bottom';
+        ctx.fillText('Q3: '+fmt(st.q3),tx,Math.min(pxQ1,pxQ3)-1);
+        ctx.textBaseline='top';
+        ctx.fillText('Q1: '+fmt(st.q1),tx,Math.max(pxQ1,pxQ3)+1);
+    });
+    ctx.font='600 11px sans-serif';
+    ctx.fillStyle=DK;
+    ctx.textAlign='center';
+    ctx.textBaseline='top';
+    labels.forEach(function(lbl,i){
+        var xVal=i*(cw+gp)+cw/2;
+        var px=xScale.getPixelForValue(xVal);
+        ctx.fillText(lbl,px,yScale.bottom+8);
+    });
+    ctx.restore();
+}};
+Chart.register(catLabelPlugin);
+
+var cw=1.6,gp=0.4;
+var stats=[{q1:-20,med:5,q3:25},{q1:-10,med:10,q3:30},{q1:0,med:15,q3:40}];
+var ds=[];
+for(var ci=0;ci<3;ci++){
+    var pts=[];
+    for(var j=0;j<20;j++){
+        var cx=ci*(cw+gp)+cw/2;
+        pts.push({x:cx+(Math.random()-.5)*cw*.8, y:(Math.random()-.5)*80});
+    }
+    ds.push({data:pts,backgroundColor:MC[ci]+'55',borderColor:MC[ci],pointRadius:3,showLine:false});
+}
+new Chart(document.getElementById('cv'),{type:'scatter',data:{datasets:ds},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,
+        layout:{padding:{bottom:28}},
+        plugins:{legend:{display:false},tooltip:{enabled:false},
+            catLabels:{labels:ML,cw:cw,gp:gp,stats:stats,catColors:MC,fmt:function(v){return v.toFixed(1)+'%';}}},
+        scales:{x:{min:-.2,max:3*(cw+gp)-gp+.2,grid:{display:false},ticks:{display:false}},
+            y:{min:-100,max:100,grid:{color:'#eee'},ticks:{callback:function(v){return v+'%'}}}}}});
+</script>
+</body></html>
